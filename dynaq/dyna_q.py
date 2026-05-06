@@ -1,6 +1,6 @@
 import random
 import numpy as np
-from helpers.env import SlipperyGridWorld
+from helpers.base_env import BaseEnv
 
 
 class DynaQAgent:
@@ -13,9 +13,10 @@ class DynaQAgent:
         eps_decay: float,
         alpha: float,
         gamma: float,
-        env: SlipperyGridWorld,
+        env: BaseEnv,
         num_states: int,
         actions: list[int],
+        planning_steps: int,
     ) -> None:
         self.num_episodes = num_episodes
         self.num_sim_iter = num_sim_iter
@@ -28,6 +29,7 @@ class DynaQAgent:
         self.num_states = num_states
         self.actions = actions
         self.num_actions = len(actions)
+        self.planning_steps = planning_steps
         self.reset()
 
     def reset(self) -> None:
@@ -55,13 +57,28 @@ class DynaQAgent:
                 )
                 state = next_state
 
-                self.run_simulation()
+                self.run_simulation(state, action, reward, next_state)
 
             epsilon = max(self.eps_min, epsilon * self.eps_decay)
 
-    def run_simulation(self) -> None:
+    def run_simulation(self, state, action, reward, next_state) -> None:
         # TODO implement model gathering and dynaq simulation
-        pass
+        self.model[state, action] = reward, next_state
+        visited_state_actions = list(self.model.keys())
+
+        for i in range(self.planning_steps):
+            done = False
+            visited_state, visited_action = random.choice(visited_state_actions)
+            r, x = self.model[visited_state, visited_action]
+
+            if self.env.is_terminal_state(x):
+                done = True
+
+            self.Q[visited_state, visited_action] = self.Q[visited_state, visited_action] + self.alpha * (
+                    r
+                    + (1 - done) * self.gamma * np.max(self.Q[x])
+                    - self.Q[visited_state, visited_action]
+            )
 
     def _epsilon_greedy_policy(self, Q, state, epsilon) -> int:
         if random.random() < epsilon:

@@ -1,8 +1,11 @@
 from __future__ import annotations
+
+from abc import ABC
 from collections import defaultdict
 import random
 from typing import Optional, Tuple
 
+from helpers import base_env
 
 # Action mapping: 0=Up, 1=Right, 2=Down, 3=Left
 ACTIONS = (0, 1, 2, 3)
@@ -20,7 +23,7 @@ def _perpendicular_actions(a: int) -> Tuple[int, int]:
     else:             # Left or Right
         return (0, 2) # Up, Down
 
-class SlipperyGridWorld:
+class SlipperyGridWorld(base_env.BaseEnv, ABC):
     """
     Simple tabular GridWorld with slippery actions.
 
