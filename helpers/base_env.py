@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 class BaseEnv(ABC):
     @abstractmethod
-    def is_terminal(self, state) -> bool:
+    def is_terminal_state(self, state) -> bool:
         pass
 
     @abstractmethod
