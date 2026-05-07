@@ -59,7 +59,15 @@ class BaseEnv:
         pass
 
     @abstractmethod
-    def step(self, action):
+    def step(self, action) -> tuple[int, float, bool, dict]:
+        pass
+
+    @abstractmethod
+    def reward(self, state: int, action: int, next_state: int) -> float:
+        pass
+
+    @abstractmethod
+    def get_transition_distribution(self, state: int, action: int) -> list[tuple[float, int]]:
         pass
 
     # --- helpers ---

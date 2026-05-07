@@ -35,6 +35,7 @@ class CliffSlipperyGridWorld(BaseEnv):
 
         if cliff is None:
             self.cliff_states = {self.row_column_to_state(3, i) for i in range(1, 11)}
+            self.cliff_states.add(self.row_column_to_state(2, 4))
         else:
             self.cliff_states = {self.row_column_to_state(r, c) for r, c in cliff}
 
@@ -69,7 +70,7 @@ class CliffSlipperyGridWorld(BaseEnv):
             state_probs[next_state_1] += (self.slip_prob / 2.0)
             state_probs[next_state_2] += (self.slip_prob / 2.0)
 
-        return list(state_probs.items())
+        return [(p, s_next) for s_next, p in state_probs.items()]
 
     def is_terminal_state(self, state: int) -> bool:
         return state == self.goal_state
@@ -86,7 +87,7 @@ class CliffSlipperyGridWorld(BaseEnv):
         state = self.row_column_to_state(r, c)
         next_state = self.row_column_to_state(nr, nc)
 
-        reward = self.reward(state, next_state)
+        reward = self.reward(state, executed ,next_state)
 
         if next_state in self.cliff_states:
             self._agent_row_column = self.start_row_column
@@ -103,7 +104,7 @@ class CliffSlipperyGridWorld(BaseEnv):
         info = {"intended_action": intended, "executed_action": executed, "steps": self._steps}
         return next_state, reward, done, info
 
-    def reward(self, state: int, next_state: int) -> float:
+    def reward(self, state: int, action: int ,next_state: int) -> float:
         if state == self.goal_state:
             return 0.0
 

@@ -10,7 +10,7 @@ class DynamicTargetSlipperyGridWorld(BaseEnv):
             cols: int = 4,
             start: Tuple[int, int] = (0, 0),
             target_start: Tuple[int, int] = (3, 3),
-            target_move_prob: float = 0.5,
+            target_move_prob: float = 0.8,
             slip_prob: float = 0.2,
             step_reward: float = -1.0,
             goal_reward: float = 10.0,
@@ -87,7 +87,7 @@ class DynamicTargetSlipperyGridWorld(BaseEnv):
                 next_state = self.encode_state(nar, nac, ntr, ntc)
                 state_probs[next_state] += p_a * p_t
 
-        return list(state_probs.items())
+        return [(p, s_next) for s_next, p in state_probs.items()]
 
     def is_terminal_state(self, state: int) -> bool:
         ar, ac, tr, tc = self.decode_state(state)
@@ -114,7 +114,7 @@ class DynamicTargetSlipperyGridWorld(BaseEnv):
         state = self.encode_state(ar, ac, tr, tc)
         next_state = self.encode_state(nar, nac, ntr, ntc)
 
-        reward = self.reward(state, next_state)
+        reward = self.reward(state, executed, next_state)
         done = self.is_terminal_state(next_state)
 
         if self.max_steps is not None and self._steps >= self.max_steps:
@@ -123,7 +123,7 @@ class DynamicTargetSlipperyGridWorld(BaseEnv):
         info = {"intended_action": action, "executed_action": executed, "steps": self._steps}
         return next_state, reward, done, info
 
-    def reward(self, state: int, next_state: int) -> float:
+    def reward(self, state: int, action: int, next_state: int) -> float:
         if self.is_terminal_state(state):
             return 0.0
         if self.is_terminal_state(next_state):
