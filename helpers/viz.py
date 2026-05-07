@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import imageio.v2 as imageio
 from helpers.env import ACTIONS, SlipperyGridWorld
+from helpers.multiple_targets_env import MultipleTargetSlipperyGridWorld
 
 ARROWS = {0: "↑", 1: "→", 2: "↓", 3: "←"}
 def _base_grid_figure(env, title: str = ""):
@@ -47,6 +48,31 @@ def plot_policy(
     for s in range(env.num_states):
         r, c = env.state_to_row_column(s)
         if (r, c) in [env.start_row_column, env.goal_row_column]:
+            continue
+        a = int(policy[s])
+        ax.text(c, r, ARROWS[a], ha="center", va="center", fontsize=14)
+
+    if filename:
+        fig.savefig(filename, dpi=200, bbox_inches="tight")
+    plt.show()
+
+def plot_policy_multiple_targets(
+    env: MultipleTargetSlipperyGridWorld,
+    policy: np.ndarray,
+    filename: Optional[str] = None,
+    title: str = "Policy",
+) -> None:
+    fig, ax = _base_grid_figure(env, title=title)
+
+    sr, sc = env.start_row_column
+    ax.text(sc, sr, "S", ha="center", va="center", fontsize=14, fontweight="bold")
+
+    for gr, gc in env._goals:
+        ax.text(gc, gr, "G", ha="center", va="center", fontsize=14, fontweight="bold")
+
+    for s in range(env.num_states):
+        r, c = env.state_to_row_column(s)
+        if (r, c) == env.start_row_column or (r, c) in env._goals:
             continue
         a = int(policy[s])
         ax.text(c, r, ARROWS[a], ha="center", va="center", fontsize=14)
