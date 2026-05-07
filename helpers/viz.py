@@ -5,7 +5,12 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import imageio.v2 as imageio
+
+from helpers.base_env import BaseEnv
+from helpers.cliff_env import CliffSlipperyGridWorld
+from helpers.dynamic_target_env import DynamicTargetSlipperyGridWorld
 from helpers.env import ACTIONS, SlipperyGridWorld
+from helpers.multiple_targets_env import MultipleTargetSlipperyGridWorld
 
 ARROWS = {0: "↑", 1: "→", 2: "↓", 3: "←"}
 def _base_grid_figure(env, title: str = ""):
@@ -23,6 +28,22 @@ def _base_grid_figure(env, title: str = ""):
     return fig, ax
 
 def plot_policy(
+    env: BaseEnv,
+    policy: np.ndarray,
+    filename: Optional[str] = None,
+    title: str = "Policy",
+) -> None:
+    if type(env) == SlipperyGridWorld:
+        plot_policy_slippery(env, policy, filename, title)
+    elif type(env) == MultipleTargetSlipperyGridWorld:
+        plot_policy_multiple_targets(env, policy, filename, title)
+    elif type(env) == CliffSlipperyGridWorld:
+        plot_policy_cliff(env, policy, filename, title)
+    elif type(env) == DynamicTargetSlipperyGridWorld:
+        plot_policy_dynamic_target(env, policy, filename, title)
+
+
+def plot_policy_slippery(
     env: SlipperyGridWorld,
     policy: np.ndarray,
     filename: Optional[str] = None,
@@ -55,8 +76,109 @@ def plot_policy(
         fig.savefig(filename, dpi=200, bbox_inches="tight")
     plt.show()
 
+def plot_policy_multiple_targets(
+    env: MultipleTargetSlipperyGridWorld,
+    policy: np.ndarray,
+    filename: Optional[str] = None,
+    title: str = "Policy",
+) -> None:
+    fig, ax = _base_grid_figure(env, title=title)
+
+    sr, sc = env.start_row_column
+    ax.text(sc, sr, "S", ha="center", va="center", fontsize=14, fontweight="bold")
+
+    for gr, gc in env._goals:
+        ax.text(gc, gr, "G", ha="center", va="center", fontsize=14, fontweight="bold")
+
+    for s in range(env.num_states):
+        r, c = env.state_to_row_column(s)
+        if (r, c) == env.start_row_column or (r, c) in env._goals:
+            continue
+        a = int(policy[s])
+        ax.text(c, r, ARROWS[a], ha="center", va="center", fontsize=14)
+
+    if filename:
+        fig.savefig(filename, dpi=200, bbox_inches="tight")
+    plt.show()
+
+def plot_policy_cliff(
+    env: CliffSlipperyGridWorld,
+    policy: np.ndarray,
+    filename: Optional[str] = None,
+    title: str = "Policy",
+) -> None:
+    fig, ax = _base_grid_figure(env, title=title)
+
+    sr, sc = env.start_row_column
+    gr, gc = env.state_to_row_column(env.goal_state)
+
+    ax.text(sc, sr, "S", ha="center", va="center", fontsize=14, fontweight="bold")
+    ax.text(gc, gr, "G", ha="center", va="center", fontsize=14, fontweight="bold")
+
+    for cliff_s in env.cliff_states:
+        cr, cc = env.state_to_row_column(cliff_s)
+        ax.text(cc, cr, "C", ha="center", va="center", fontsize=14, fontweight="bold", color="red")
+
+    for s in range(env.num_states):
+        r, c = env.state_to_row_column(s)
+        if (r, c) == (sr, sc) or s == env.goal_state or s in env.cliff_states:
+            continue
+        a = int(policy[s])
+        ax.text(c, r, ARROWS[a], ha="center", va="center", fontsize=14)
+
+    if filename:
+        fig.savefig(filename, dpi=200, bbox_inches="tight")
+    plt.show()
+
+
+def plot_policy_dynamic_target(
+        env: DynamicTargetSlipperyGridWorld,
+        policy: np.ndarray,
+        filename: Optional[str] = None,
+        title: str = "Policy (Target at Start)",
+) -> None:
+    fig, ax = _base_grid_figure(env, title=title)
+
+    sr, sc = env.start_row_column
+    tr, tc = env.target_start
+
+    ax.text(sc, sr, "S", ha="center", va="center", fontsize=14, fontweight="bold")
+    ax.text(tc, tr, "T", ha="center", va="center", fontsize=14, fontweight="bold")
+
+    for s in range(env.num_states):
+        ar, ac, current_tr, current_tc = env.decode_state(s)
+
+        if (current_tr, current_tc) != (tr, tc):
+            continue
+
+        if (ar, ac) == (sr, sc) or (ar, ac) == (tr, tc):
+            continue
+
+        a = int(policy[s])
+        ax.text(ac, ar, ARROWS[a], ha="center", va="center", fontsize=14)
+
+    if filename:
+        fig.savefig(filename, dpi=200, bbox_inches="tight")
+    plt.show()
+
+
 def plot_value_heatmap(
     env,
+    V: np.ndarray,
+    filename: Optional[str] = None,
+    title: str = "State Value",
+) -> None:
+    if type(env) == SlipperyGridWorld:
+        plot_value_heatmap_slippery(env, V, filename, title)
+    elif type(env) == MultipleTargetSlipperyGridWorld:
+        plot_value_heatmap_multiple_targets(env, V, filename, title)
+    elif type(env) == CliffSlipperyGridWorld:
+        plot_value_heatmap_cliff(env, V, filename, title)
+    elif type(env) == DynamicTargetSlipperyGridWorld:
+        plot_value_heatmap_dynamic_target(env, V, filename, title)
+
+def plot_value_heatmap_slippery(
+    env : SlipperyGridWorld,
     V: np.ndarray,
     filename: Optional[str] = None,
     title: str = "State Value",
@@ -88,8 +210,91 @@ def plot_value_heatmap(
         fig.savefig(filename, dpi=200, bbox_inches="tight")
     plt.show()
 
+def plot_value_heatmap_multiple_targets(
+    env: MultipleTargetSlipperyGridWorld,
+    V: np.ndarray,
+    filename: Optional[str] = None,
+    title: str = "State Value",
+) -> None:
+    V_grid = V.reshape(env.rows, env.cols)
+    fig, ax = plt.subplots()
+    im = ax.imshow(V_grid)
+
+    ax.set_title(title)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+    sr, sc = env.start_row_column
+    ax.text(sc, sr, "S", ha="center", va="center", fontsize=12, fontweight="bold")
+    for gr, gc in env._goals:
+        ax.text(gc, gr, "G", ha="center", va="center", fontsize=12, fontweight="bold")
+
+    if filename:
+        fig.savefig(filename, dpi=200, bbox_inches="tight")
+    plt.show()
+
+def plot_value_heatmap_cliff(
+        env: CliffSlipperyGridWorld,
+        V: np.ndarray,
+        filename: Optional[str] = None,
+        title: str = "State Value",
+) -> None:
+    V_grid = V.reshape(env.rows, env.cols)
+    fig, ax = plt.subplots()
+    im = ax.imshow(V_grid)
+
+    ax.set_title(title)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+    sr, sc = env.start_row_column
+    gr, gc = env.state_to_row_column(env.goal_state)
+
+    ax.text(sc, sr, "S", ha="center", va="center", fontsize=12, fontweight="bold")
+    ax.text(gc, gr, "G", ha="center", va="center", fontsize=12, fontweight="bold")
+
+    for cliff_s in env.cliff_states:
+        cr, cc = env.state_to_row_column(cliff_s)
+        ax.text(cc, cr, "C", ha="center", va="center", fontsize=12, fontweight="bold", color="red")
+
+    if filename:
+        fig.savefig(filename, dpi=200, bbox_inches="tight")
+    plt.show()
+
+def plot_value_heatmap_dynamic_target(
+    env: DynamicTargetSlipperyGridWorld,
+    V: np.ndarray,
+    filename: Optional[str] = None,
+    title: str = "State Value (Target at Start)",
+) -> None:
+    V_grid = np.zeros((env.rows, env.cols))
+    tr, tc = env.target_start
+
+    for s in range(env.num_states):
+        ar, ac, current_tr, current_tc = env.decode_state(s)
+        if (current_tr, current_tc) == (tr, tc):
+            V_grid[ar, ac] = V[s]
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(V_grid)
+
+    ax.set_title(title)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+    sr, sc = env.start_row_column
+    ax.text(sc, sr, "S", ha="center", va="center", fontsize=12, fontweight="bold")
+    ax.text(tc, tr, "T", ha="center", va="center", fontsize=12, fontweight="bold", color="blue")
+
+    if filename:
+        fig.savefig(filename, dpi=200, bbox_inches="tight")
+    plt.show()
+
 def render_episode_frames(
-    env:SlipperyGridWorld,
+    env: BaseEnv,
     trajectory: List[Tuple[int,int,int,float,int,bool]],
     out_dir: str = "frames",
     prefix: str = "frame",
@@ -107,9 +312,30 @@ def render_episode_frames(
 
         fig, ax = _base_grid_figure(env, title=f"t={t}, r={r:.2f}, done={done}")
         sr, sc = env.start_row_column
-        gr, gc = env.goal_row_column
         ax.text(sc, sr, "S", ha="center", va="center", fontsize=14, fontweight="bold")
-        ax.text(gc, gr, "G", ha="center", va="center", fontsize=14, fontweight="bold")
+
+        if type(env) == SlipperyGridWorld:
+            gr, gc = env.goal_row_column
+            ax.text(gc, gr, "G", ha="center", va="center", fontsize=14, fontweight="bold")
+            r_next, c_next = env.state_to_row_column(s_next)
+
+        elif type(env) == MultipleTargetSlipperyGridWorld:
+            goals = getattr(env, '_goals', getattr(env, 'goals', []))
+            for gr, gc in goals:
+                ax.text(gc, gr, "G", ha="center", va="center", fontsize=14, fontweight="bold")
+            r_next, c_next = env.state_to_row_column(s_next)
+
+        elif type(env) == CliffSlipperyGridWorld:
+            gr, gc = env.state_to_row_column(env.goal_state)
+            ax.text(gc, gr, "G", ha="center", va="center", fontsize=14, fontweight="bold")
+            for cliff_s in env.cliff_states:
+                cr, cc = env.state_to_row_column(cliff_s)
+                ax.text(cc, cr, "C", ha="center", va="center", fontsize=14, fontweight="bold", color="red")
+            r_next, c_next = env.state_to_row_column(s_next)
+
+        elif type(env) == DynamicTargetSlipperyGridWorld:
+            r_next, c_next, tr, tc = env.decode_state(s_next)
+            ax.text(tc, tr, "T", ha="center", va="center", fontsize=14, fontweight="bold", color="blue")
 
         ax.text(c_next, r_next, "A", ha="center", va="center", fontsize=16, fontweight="bold")
 
@@ -117,13 +343,14 @@ def render_episode_frames(
             ax.set_title(f"t={t}  intended={ARROWS[a_intended]}  executed={ARROWS[a_exec]}  r={r:.2f}  done={done}")
 
         path = os.path.join(out_dir, f"{prefix}_{t:04d}.png")
-        fig.savefig(path, dpi=200, bbox_inches="tight")
+        fig.savefig(path, dpi=200)
+        # fig.savefig(path, dpi=200, bbox_inches="tight")
         plt.close(fig)
         saved.append(path)
 
     return saved
 
-def run_to_gif(env: SlipperyGridWorld, Q: Optional[np.ndarray]=None, policy: Optional[np.ndarray]=None, gif_path: str = "episode.gif", fps: int = 6) -> None:
+def run_to_gif(env: BaseEnv, Q: Optional[np.ndarray]=None, policy: Optional[np.ndarray]=None, gif_path: str = "episode.gif", fps: int = 6) -> None:
     """Creates a gif for a single run of the agent in the environment.
 
     Args:
@@ -136,9 +363,9 @@ def run_to_gif(env: SlipperyGridWorld, Q: Optional[np.ndarray]=None, policy: Opt
     roll = run_episode(env, Q=Q, policy = policy)
     frames = render_episode_frames(env, roll["trajectory"], out_dir="frames", prefix="ep")
     imgs = [imageio.imread(p) for p in frames]
-    imageio.mimsave(gif_path, imgs, duration=1.0 / fps)
+    imageio.mimsave(gif_path, imgs, fps=fps)
 
-def greedy_policy_from_V(V: np.ndarray, env: SlipperyGridWorld, gamma: float):
+def greedy_policy_from_V(V: np.ndarray, env: BaseEnv, gamma: float):
     """Returns greedy policy rom the value function V(s)
 
     Args:
@@ -165,7 +392,7 @@ def greedy_policy_from_V(V: np.ndarray, env: SlipperyGridWorld, gamma: float):
     return policy
 
 def run_episode(
-    env: SlipperyGridWorld,
+    env: BaseEnv,
     Q: Optional[np.ndarray] = None,
     policy: Optional[np.ndarray] = None,
     seed: int = None
@@ -205,7 +432,7 @@ def run_episode(
         s = s_next
         steps += 1
 
-    success = (env.state_to_row_column(s) == env.goal_row_column)
+    success = env.is_terminal_state(s)
     return {
         "return": total_return,
         "steps": steps,
@@ -214,7 +441,7 @@ def run_episode(
     }
 
 def evaluate(
-    env: SlipperyGridWorld,
+    env: BaseEnv,
     Q: Optional[np.ndarray] = None,
     policy: Optional[np.ndarray] = None,
     n_episodes: int = 200,
