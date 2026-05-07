@@ -343,7 +343,8 @@ def render_episode_frames(
             ax.set_title(f"t={t}  intended={ARROWS[a_intended]}  executed={ARROWS[a_exec]}  r={r:.2f}  done={done}")
 
         path = os.path.join(out_dir, f"{prefix}_{t:04d}.png")
-        fig.savefig(path, dpi=200, bbox_inches="tight")
+        fig.savefig(path, dpi=200)
+        # fig.savefig(path, dpi=200, bbox_inches="tight")
         plt.close(fig)
         saved.append(path)
 

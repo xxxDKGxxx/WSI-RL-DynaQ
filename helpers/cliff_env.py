@@ -7,15 +7,15 @@ from helpers.base_env import BaseEnv, _perpendicular_actions, ACTIONS, ACTION_TO
 class CliffSlipperyGridWorld(BaseEnv):
     def __init__(
             self,
-            rows: int = 4,
+            rows: int = 6,
             cols: int = 12,
-            start: Tuple[int, int] = (3, 0),
-            goal: Tuple[int, int] = (3, 11),
+            start: Tuple[int, int] = (5, 0),
+            goal: Tuple[int, int] = (5, 11),
             cliff: Optional[list[Tuple[int, int]]] = None,
             slip_prob: float = 0.0,
             step_reward: float = -1.0,
             cliff_reward: float = -100.0,
-            goal_reward: float = 10.0,
+            goal_reward: float = 25.0,
             max_steps: Optional[int] = None,
             seed: Optional[int] = None,
     ):
@@ -34,8 +34,8 @@ class CliffSlipperyGridWorld(BaseEnv):
         self.goal_reward = goal_reward
 
         if cliff is None:
-            self.cliff_states = {self.row_column_to_state(3, i) for i in range(1, 11)}
-            self.cliff_states.add(self.row_column_to_state(2, 4))
+            self.cliff_states = {self.row_column_to_state(5, i) for i in range(2, 11)}
+            # self.cliff_states.add(self.row_column_to_state(4, 4))
         else:
             self.cliff_states = {self.row_column_to_state(r, c) for r, c in cliff}
 
