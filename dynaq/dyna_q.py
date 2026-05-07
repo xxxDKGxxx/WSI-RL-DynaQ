@@ -32,7 +32,7 @@ class DynaQAgent:
 
     def reset(self) -> None:
         self.Q = np.zeros((self.num_states, self.num_actions))
-        self.model: dict[tuple[int, int], tuple[int, int]] = {}
+        self.model = StochasticDynaQModel()
 
     def run(self) -> None:
         epsilon = self.eps
@@ -53,6 +53,9 @@ class DynaQAgent:
                     + (1 - done) * self.gamma * np.max(self.Q[next_state])
                     - self.Q[state, action]
                 )
+
+                self.model.update(state, action, reward, next_state, done)
+
                 state = next_state
 
                 self.run_simulation()
@@ -60,11 +63,53 @@ class DynaQAgent:
             epsilon = max(self.eps_min, epsilon * self.eps_decay)
 
     def run_simulation(self) -> None:
-        # TODO implement model gathering and dynaq simulation
-        pass
+        for _ in range(self.num_sim_iter):
+            state, action, reward, next_state, done = self.model.sample()
+            self.Q[state, action] = self.Q[state, action] + self.alpha * (
+                reward
+                + (1 - done) * self.gamma * np.max(self.Q[next_state])
+                - self.Q[state, action]
+            )
 
     def _epsilon_greedy_policy(self, Q, state, epsilon) -> int:
         if random.random() < epsilon:
             return random.choice(self.actions)
 
         return int(np.argmax(Q[state]))
+
+
+class StochasticDynaQModel:
+    def __init__(self) -> None:
+        self.model = {}
+
+    def update(self, state, action, reward, next_state, done) -> None:
+        if state not in self.model:
+            self.model[state] = {}
+        if action not in self.model[state]:
+            self.model[state][action] = {}
+        if next_state not in self.model[state][action]:
+            self.model[state][action][next_state] = {
+                "count": 0,
+                "reward_sum": 0.0,
+                "done": done,
+            }
+
+        self.model[state][action][next_state]["count"] += 1
+        self.model[state][action][next_state]["reward_sum"] += reward
+
+    def sample(self) -> tuple[int, int, float, int, bool]:
+        state = random.choice(list(self.model.keys()))
+        action = random.choice(list(self.model[state].keys()))
+
+        transitions = self.model[state][action]
+        next_states = list(transitions.keys())
+
+        counts = [transitions[ns]["count"] for ns in next_states]
+
+        sampled_next_state = random.choices(next_states, weights=counts, k=1)[0]
+
+        stats = transitions[sampled_next_state]
+        expected_reward = stats["reward_sum"] / stats["count"]
+        done = stats["done"]
+
+        return state, action, expected_reward, sampled_next_state, done
