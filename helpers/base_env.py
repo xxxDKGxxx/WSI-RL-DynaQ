@@ -15,23 +15,22 @@ ACTION_TO_DELTA = {
 
 
 def _perpendicular_actions(a: int) -> Tuple[int, int]:
-    if a in (0, 2):   # Up or Down
-        return (3, 1) # Left, Right
-    else:             # Left or Right
-        return (0, 2) # Up, Down
+    if a in (0, 2):  # Up or Down
+        return (3, 1)  # Left, Right
+    else:  # Left or Right
+        return (0, 2)  # Up, Down
 
 
 class BaseEnv:
-
     def __init__(
-            self,
-            rows: int = 4,
-            cols: int = 4,
-            start: Tuple[int, int] = (0, 0),
-            slip_prob: float = 0.2,
-            step_reward: float = -1.0,
-            max_steps: Optional[int] = None,
-            seed: Optional[int] = None,
+        self,
+        rows: int = 4,
+        cols: int = 4,
+        start: Tuple[int, int] = (0, 0),
+        slip_prob: float = 0.2,
+        step_reward: float = -1.0,
+        max_steps: Optional[int] = None,
+        seed: Optional[int] = None,
     ):
         assert rows > 0 and cols > 0
         assert 0.0 <= slip_prob <= 1.0
@@ -55,7 +54,7 @@ class BaseEnv:
         pass
 
     @abstractmethod
-    def reset(self):
+    def reset(self) -> int:
         pass
 
     @abstractmethod
@@ -67,7 +66,9 @@ class BaseEnv:
         pass
 
     @abstractmethod
-    def get_transition_distribution(self, state: int, action: int) -> list[tuple[float, int]]:
+    def get_transition_distribution(
+        self, state: int, action: int
+    ) -> list[tuple[float, int]]:
         pass
 
     # --- helpers ---

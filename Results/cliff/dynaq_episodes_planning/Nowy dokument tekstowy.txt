@@ -1,0 +1,1 @@
+czas wykonywania się to cały cell, czyli rysowanie też, trzeba porównywac różnicami. wyniki statów różnią się zależnie od konkretnego odpalenia, np w 200-150 miałem raz -50 reward

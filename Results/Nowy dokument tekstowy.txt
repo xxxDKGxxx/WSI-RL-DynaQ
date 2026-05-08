@@ -1,0 +1,1 @@
+główne eksperymenty to po prostu porównanei 4 algorytmach na 4 środowiskach. Używane są bazowe wartości współczynników (te z notebooka)

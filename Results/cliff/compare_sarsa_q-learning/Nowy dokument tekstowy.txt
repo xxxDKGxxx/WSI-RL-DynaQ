@@ -1,0 +1,2 @@
+W mdoelu deterministycznym (bez slippery) można zauważyć, że SARSA trzyma się kratke od krawędzi, a Q-leaning idzie po najszybszej ścieżce.
+W modelu niedeterministycznym oba algorytmy nie idą po krawędzi, ale po zdjęciach polityki, widac że sarsa się bardziej boi być nawet 1 kratke z dala od krawędzi i są miejsca gdzie chce iśc 2 kratki od krawędzi

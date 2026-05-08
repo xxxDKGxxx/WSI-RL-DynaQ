@@ -1,0 +1,2 @@
+{'avg_return': 25.94, 'std_return': 10.4353, 'success_rate': 0.96, 'avg_steps': 12.42}
+gamma = 0.99

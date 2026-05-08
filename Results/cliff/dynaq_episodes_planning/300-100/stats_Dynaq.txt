@@ -1,0 +1,11 @@
+{'avg_return': 3.24, 'std_return': 3.2958, 'success_rate': 1.0, 'avg_steps': 22.76}
+
+epsilon = 1
+epsilon_min = 0.01
+epsilon_decay = 0.99
+alpha = 0.1
+gamma = 0.99
+
+dynaq_episodes = 300
+dynaq_num_sim_iter = 100
+execution time = 19.4

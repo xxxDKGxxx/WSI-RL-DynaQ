@@ -1,0 +1,2 @@
+{'avg_return': 3.58, 'std_return': 3.0337, 'success_rate': 1.0, 'avg_steps': 7.42}
+time = 
